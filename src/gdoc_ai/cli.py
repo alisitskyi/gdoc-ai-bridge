@@ -2,7 +2,7 @@
 """
 Global Google Docs & Sheets CLI Tool (gdoc / gsheet)
 Enables any AI assistant or developer in VS Code across all projects to:
-- Authenticate once globally
+- Authenticate once globally with multiple account profiles (--profile)
 - Read & edit Google Docs (search/replace, append, insert, comments)
 - Read & edit Google Sheets (read ranges, update cells, append rows, list sheets)
 - Create backups automatically before editing
@@ -13,7 +13,6 @@ import re
 import sys
 import csv
 import json
-import io
 import argparse
 from datetime import datetime
 from pathlib import Path
@@ -56,7 +55,7 @@ def find_credentials_file() -> Path:
 
 
 def find_token_file(profile: str = "default") -> Path:
-    """Find token.json in global ~/.gdoc or local .secrets/ directory."""
+    """Find token file for specific profile."""
     if profile and profile != "default":
         return GLOBAL_DIR / f"token_{profile}.json"
     if GLOBAL_TOKEN.exists():
@@ -142,10 +141,10 @@ def get_services(profile: str = "default"):
     return docs, drive, sheets
 
 
-def create_backup(file_id: str, prefix: str = "[Backup]") -> Dict[str, str]:
+def create_backup(file_id: str, prefix: str = "[Backup]", profile: str = "default") -> Dict[str, str]:
     """Create a backup copy in Google Drive."""
     file_id = extract_id(file_id)
-    _, drive, _ = get_services()
+    _, drive, _ = get_services(profile)
 
     try:
         meta = drive.files().get(fileId=file_id, fields="name").execute()
@@ -192,8 +191,9 @@ def parse_structural_elements(elements: List[Dict[str, Any]]) -> str:
 
 
 def cmd_read(args):
+    prof = getattr(args, 'profile', 'default')
     doc_id = extract_id(args.id_or_url)
-    docs, _, _ = get_services()
+    docs, _, _ = get_services(prof)
     doc = docs.documents().get(documentId=doc_id).execute()
     title = doc.get('title', 'Untitled')
     content = doc.get('body', {}).get('content', [])
@@ -209,11 +209,12 @@ def cmd_read(args):
 
 
 def cmd_replace(args):
+    prof = getattr(args, 'profile', 'default')
     doc_id = extract_id(args.id_or_url)
     if not args.no_backup:
-        create_backup(doc_id)
+        create_backup(doc_id, profile=prof)
 
-    docs, _, _ = get_services()
+    docs, _, _ = get_services(prof)
     requests = [{
         'replaceAllText': {
             'containsText': {
@@ -232,11 +233,12 @@ def cmd_replace(args):
 
 
 def cmd_append(args):
+    prof = getattr(args, 'profile', 'default')
     doc_id = extract_id(args.id_or_url)
     if not args.no_backup:
-        create_backup(doc_id)
+        create_backup(doc_id, profile=prof)
 
-    docs, _, _ = get_services()
+    docs, _, _ = get_services(prof)
     doc = docs.documents().get(documentId=doc_id).execute()
     body_content = doc.get('body', {}).get('content', [])
     end_idx = body_content[-1].get('endIndex', 1) - 1 if body_content else 1
@@ -254,11 +256,12 @@ def cmd_append(args):
 
 
 def cmd_insert(args):
+    prof = getattr(args, 'profile', 'default')
     doc_id = extract_id(args.id_or_url)
     if not args.no_backup:
-        create_backup(doc_id)
+        create_backup(doc_id, profile=prof)
 
-    docs, _, _ = get_services()
+    docs, _, _ = get_services(prof)
     requests = [{
         'insertText': {
             'location': {'index': args.index},
@@ -270,8 +273,9 @@ def cmd_insert(args):
 
 
 def cmd_comments(args):
+    prof = getattr(args, 'profile', 'default')
     doc_id = extract_id(args.id_or_url)
-    _, drive, _ = get_services()
+    _, drive, _ = get_services(prof)
     resp = drive.comments().list(
         fileId=doc_id,
         fields="comments(id,author(displayName),content,createdTime,resolved,replies(id,author(displayName),content,createdTime))"
@@ -290,8 +294,9 @@ def cmd_comments(args):
 
 
 def cmd_reply(args):
+    prof = getattr(args, 'profile', 'default')
     doc_id = extract_id(args.id_or_url)
-    _, drive, _ = get_services()
+    _, drive, _ = get_services(prof)
     drive.replies().create(
         fileId=doc_id,
         commentId=args.comment_id,
@@ -304,8 +309,9 @@ def cmd_reply(args):
 # ==================== GOOGLE SHEETS FUNCTIONS ====================
 
 def cmd_sheet_info(args):
+    prof = getattr(args, 'profile', 'default')
     sheet_id = extract_id(args.id_or_url)
-    _, _, sheets = get_services()
+    _, _, sheets = get_services(prof)
     res = sheets.spreadsheets().get(spreadsheetId=sheet_id).execute()
     title = res.get('properties', {}).get('title', 'Untitled')
     print(f"=== Spreadsheet: {title} (ID: {sheet_id}) ===")
@@ -320,8 +326,9 @@ def cmd_sheet_info(args):
 
 
 def cmd_sheet_read(args):
+    prof = getattr(args, 'profile', 'default')
     sheet_id = extract_id(args.id_or_url)
-    _, _, sheets = get_services()
+    _, _, sheets = get_services(prof)
 
     range_name = args.range
     if not range_name:
@@ -361,11 +368,12 @@ def cmd_sheet_read(args):
 
 
 def cmd_sheet_append(args):
+    prof = getattr(args, 'profile', 'default')
     sheet_id = extract_id(args.id_or_url)
     if not args.no_backup:
-        create_backup(sheet_id)
+        create_backup(sheet_id, profile=prof)
 
-    _, _, sheets = get_services()
+    _, _, sheets = get_services(prof)
     try:
         val_data = json.loads(args.values)
         if not isinstance(val_data, list):
@@ -390,11 +398,12 @@ def cmd_sheet_append(args):
 
 
 def cmd_sheet_update(args):
+    prof = getattr(args, 'profile', 'default')
     sheet_id = extract_id(args.id_or_url)
     if not args.no_backup:
-        create_backup(sheet_id)
+        create_backup(sheet_id, profile=prof)
 
-    _, _, sheets = get_services()
+    _, _, sheets = get_services(prof)
     try:
         val_data = json.loads(args.values)
         if not isinstance(val_data, list):
@@ -417,91 +426,97 @@ def cmd_sheet_update(args):
 
 
 def cmd_status(args):
+    prof = getattr(args, 'profile', 'default')
     creds_file = find_credentials_file()
-    token_file = find_token_file()
-    print("=== Google Docs & Sheets CLI Global Status ===")
+    token_file = find_token_file(prof)
+    print(f"=== Google Docs & Sheets Status (Profile: '{prof}') ===")
     print(f"Credentials location: {creds_file} (Exists: {creds_file.exists()})")
     print(f"Token location:       {token_file} (Exists: {token_file.exists()})")
     if not creds_file.exists():
         print("[-] Status: Please put credentials.json in ~/.gdoc/credentials.json")
     elif not token_file.exists():
-        print("[!] Status: credentials.json is present! Please run 'gdoc auth' to authorize.")
+        print(f"[!] Status: credentials.json present! Run 'gdoc auth --profile {prof}' to authorize.")
     else:
         try:
             creds = Credentials.from_authorized_user_file(str(token_file), SCOPES)
             if creds and creds.valid:
-                print("[+] Status: Authentication is VALID and READY for Docs & Sheets!")
+                print(f"[+] Status: Authentication is VALID and READY for profile '{prof}'!")
             elif creds and creds.expired and creds.refresh_token:
-                print("[*] Status: Token expired, but refreshable automatically on next run.")
+                print(f"[*] Status: Token for profile '{prof}' expired, will refresh automatically.")
             else:
-                print("[!] Status: Token invalid, please run 'gdoc auth'.")
+                print(f"[!] Status: Token invalid, please run 'gdoc auth --profile {prof}'.")
         except Exception as e:
             print(f"[-] Status: Error verifying token: {e}")
 
 
 def main():
+    # Common parent parser with --profile
+    common_parser = argparse.ArgumentParser(add_help=False)
+    common_parser.add_argument("--profile", default="default", help="Google account profile (e.g. 'work', 'personal')")
+
     parser = argparse.ArgumentParser(
         prog="gdoc",
-        description="Global Google Docs & Sheets CLI for AI assistants and developers."
+        description="Global Google Docs & Sheets CLI for AI assistants and developers.",
+        parents=[common_parser]
     )
     sub = parser.add_subparsers(dest="subcommand", help="Command to run")
 
     # Common
-    sub.add_parser("auth", help="Run one-time OAuth authentication")
-    sub.add_parser("status", help="Check credentials and authentication status")
+    sub.add_parser("auth", help="Run one-time OAuth authentication", parents=[common_parser])
+    sub.add_parser("status", help="Check credentials and authentication status", parents=[common_parser])
 
-    p_back = sub.add_parser("backup", help="Create a backup copy in Google Drive")
+    p_back = sub.add_parser("backup", help="Create a backup copy in Google Drive", parents=[common_parser])
     p_back.add_argument("id_or_url", help="Google Doc or Sheet URL/ID")
     p_back.add_argument("--prefix", default="[Backup]", help="Backup title prefix")
 
     # Docs
-    p_read = sub.add_parser("read", help="Read Google Doc content")
+    p_read = sub.add_parser("read", help="Read Google Doc content", parents=[common_parser])
     p_read.add_argument("id_or_url", help="Google Doc URL or Document ID")
     p_read.add_argument("--save-to", help="Path to save document text")
 
-    p_rep = sub.add_parser("replace", help="Find and replace text in Google Doc")
+    p_rep = sub.add_parser("replace", help="Find and replace text in Google Doc", parents=[common_parser])
     p_rep.add_argument("id_or_url", help="Google Doc URL or Document ID")
     p_rep.add_argument("--find", required=True, help="Text to search for")
     p_rep.add_argument("--replace", required=True, help="Replacement text")
     p_rep.add_argument("--ignore-case", action="store_true", help="Case-insensitive search")
     p_rep.add_argument("--no-backup", action="store_true", help="Skip backup creation")
 
-    p_app = sub.add_parser("append", help="Append text to end of Google Doc")
+    p_app = sub.add_parser("append", help="Append text to end of Google Doc", parents=[common_parser])
     p_app.add_argument("id_or_url", help="Google Doc URL or Document ID")
     p_app.add_argument("--text", required=True, help="Text to append")
     p_app.add_argument("--no-backup", action="store_true", help="Skip backup creation")
 
-    p_ins = sub.add_parser("insert", help="Insert text at specific character index")
+    p_ins = sub.add_parser("insert", help="Insert text at specific character index", parents=[common_parser])
     p_ins.add_argument("id_or_url", help="Google Doc URL or Document ID")
     p_ins.add_argument("--text", required=True, help="Text to insert")
     p_ins.add_argument("--index", type=int, default=1, help="Index position")
     p_ins.add_argument("--no-backup", action="store_true", help="Skip backup creation")
 
-    p_com = sub.add_parser("comments", help="List comments in Google Doc")
+    p_com = sub.add_parser("comments", help="List comments in Google Doc", parents=[common_parser])
     p_com.add_argument("id_or_url", help="Google Doc URL or Document ID")
 
-    p_repcom = sub.add_parser("reply", help="Reply to a comment")
+    p_repcom = sub.add_parser("reply", help="Reply to a comment", parents=[common_parser])
     p_repcom.add_argument("id_or_url", help="Google Doc URL or Document ID")
     p_repcom.add_argument("--comment-id", required=True, help="Comment ID")
     p_repcom.add_argument("--text", required=True, help="Reply text")
 
     # Sheets
-    p_sinfo = sub.add_parser("sheet-info", help="Get spreadsheet metadata and tab list")
+    p_sinfo = sub.add_parser("sheet-info", help="Get spreadsheet metadata and tab list", parents=[common_parser])
     p_sinfo.add_argument("id_or_url", help="Google Sheet URL or Spreadsheet ID")
 
-    p_sread = sub.add_parser("sheet-read", help="Read values from Google Sheet")
+    p_sread = sub.add_parser("sheet-read", help="Read values from Google Sheet", parents=[common_parser])
     p_sread.add_argument("id_or_url", help="Google Sheet URL or Spreadsheet ID")
     p_sread.add_argument("--range", help="Sheet range (e.g. 'Sheet1!A1:D20' or 'TabName')")
     p_sread.add_argument("--csv", action="store_true", help="Output in CSV format")
     p_sread.add_argument("--json", action="store_true", help="Output in JSON format")
 
-    p_supdate = sub.add_parser("sheet-update", help="Update cells in Google Sheet")
+    p_supdate = sub.add_parser("sheet-update", help="Update cells in Google Sheet", parents=[common_parser])
     p_supdate.add_argument("id_or_url", help="Google Sheet URL or Spreadsheet ID")
     p_supdate.add_argument("--range", required=True, help="Target cell/range (e.g. 'Sheet1!A2')")
     p_supdate.add_argument("--values", required=True, help="JSON array of values (e.g. '[[\"A\", \"B\"]]') or comma-separated")
     p_supdate.add_argument("--no-backup", action="store_true", help="Skip backup creation")
 
-    p_sapp = sub.add_parser("sheet-append", help="Append row(s) to Google Sheet")
+    p_sapp = sub.add_parser("sheet-append", help="Append row(s) to Google Sheet", parents=[common_parser])
     p_sapp.add_argument("id_or_url", help="Google Sheet URL or Spreadsheet ID")
     p_sapp.add_argument("--values", required=True, help="JSON array of values or comma-separated")
     p_sapp.add_argument("--range", help="Target sheet/range (default 'Sheet1!A1')")
@@ -514,13 +529,14 @@ def main():
         sys.exit(0)
 
     try:
+        prof = getattr(args, 'profile', 'default')
         if args.subcommand == "auth":
-            get_credentials()
-            print("[+] Authentication successful!")
+            get_credentials(prof)
+            print(f"[+] Authentication successful for profile '{prof}'!")
         elif args.subcommand == "status":
             cmd_status(args)
         elif args.subcommand == "backup":
-            create_backup(args.id_or_url, args.prefix)
+            create_backup(args.id_or_url, args.prefix, profile=prof)
         elif args.subcommand == "read":
             cmd_read(args)
         elif args.subcommand == "replace":

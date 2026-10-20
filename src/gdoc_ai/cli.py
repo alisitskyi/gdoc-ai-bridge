@@ -55,8 +55,10 @@ def find_credentials_file() -> Path:
     return GLOBAL_CREDS
 
 
-def find_token_file() -> Path:
+def find_token_file(profile: str = "default") -> Path:
     """Find token.json in global ~/.gdoc or local .secrets/ directory."""
+    if profile and profile != "default":
+        return GLOBAL_DIR / f"token_{profile}.json"
     if GLOBAL_TOKEN.exists():
         return GLOBAL_TOKEN
     local_token = Path.cwd() / '.secrets' / 'token.json'
@@ -78,11 +80,11 @@ def extract_id(id_or_url: str) -> str:
     return id_or_url.strip()
 
 
-def get_credentials() -> Any:
+def get_credentials(profile: str = "default") -> Any:
     """Authenticate via OAuth Desktop App or Service Account."""
     GLOBAL_DIR.mkdir(parents=True, exist_ok=True)
     creds_file = find_credentials_file()
-    token_file = find_token_file()
+    token_file = find_token_file(profile)
 
     if not creds_file.exists():
         print(f"\n[ERROR] Credentials file not found!", file=sys.stderr)
@@ -113,27 +115,27 @@ def get_credentials() -> Any:
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            print("[*] Refreshing expired token...", file=sys.stderr)
+            print(f"[*] Refreshing expired token (profile: {profile})...", file=sys.stderr)
             try:
                 creds.refresh(Request())
             except Exception:
                 creds = None
 
         if not creds:
-            print("[*] Launching browser for Google login...", file=sys.stderr)
+            print(f"[*] Launching browser for Google login (profile: {profile})...", file=sys.stderr)
             flow = InstalledAppFlow.from_client_secrets_file(str(creds_file), SCOPES)
             creds = flow.run_local_server(port=0)
 
-        with open(GLOBAL_TOKEN, 'w', encoding='utf-8') as f:
+        with open(token_file, 'w', encoding='utf-8') as f:
             f.write(creds.to_json())
-        print(f"[+] Global token saved to {GLOBAL_TOKEN}", file=sys.stderr)
+        print(f"[+] Token for profile '{profile}' saved to {token_file}", file=sys.stderr)
 
     return creds
 
 
-def get_services():
+def get_services(profile: str = "default"):
     """Return Docs, Drive, and Sheets API service clients."""
-    creds = get_credentials()
+    creds = get_credentials(profile)
     docs = build('docs', 'v1', credentials=creds)
     drive = build('drive', 'v3', credentials=creds)
     sheets = build('sheets', 'v4', credentials=creds)

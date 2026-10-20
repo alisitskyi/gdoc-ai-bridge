@@ -125,28 +125,47 @@ gdoc backup "<URL>"
 
 ### 📊 Google Sheets
 
+Both `gdoc` and `gsheet` CLI aliases can be used interchangeably:
+
 ```bash
 # View spreadsheet title, tab names, and dimensions:
-gdoc sheet-info "https://docs.google.com/spreadsheets/d/<ID>/edit"
+gsheet sheet-info "https://docs.google.com/spreadsheets/d/<ID>/edit"
 
 # Read table (formatted text table):
-gdoc sheet-read "<URL>"
+gsheet sheet-read "<URL>"
 
 # Read specific tab or range:
-gdoc sheet-read "<URL>" --range "Sheet1!A1:D20"
+gsheet sheet-read "<URL>" --range "Sheet1!A1:D20"
 
 # Output as JSON (perfect for AI processing):
-gdoc sheet-read "<URL>" --json
+gsheet sheet-read "<URL>" --json
 
 # Output as CSV:
-gdoc sheet-read "<URL>" --csv
+gsheet sheet-read "<URL>" --csv
 
 # Update cell(s):
-gdoc sheet-update "<URL>" --range "Sheet1!B2" --values "Updated Status"
-gdoc sheet-update "<URL>" --range "Sheet1!A2:B2" --values '[["Value A", "Value B"]]'
+gsheet sheet-update "<URL>" --range "Sheet1!B2" --values "Updated Status"
+gsheet sheet-update "<URL>" --range "Sheet1!A2:B2" --values '[["Value A", "Value B"]]'
 
 # Append a row to the table:
-gdoc sheet-append "<URL>" --values "Product A, 199.99, Active"
+gsheet sheet-append "<URL>" --values "Product A, 199.99, Active"
+```
+
+---
+
+### 🔄 Multi-Account Profiles
+
+Manage separate personal and work Google accounts:
+```powershell
+# Authenticate personal (default) account:
+gdoc auth
+
+# Authenticate work account:
+gdoc auth --profile work
+
+# Read/edit using the work account profile:
+gdoc read "<URL>" --profile work
+gsheet sheet-read "<URL>" --profile work
 ```
 
 ---

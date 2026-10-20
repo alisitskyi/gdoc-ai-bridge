@@ -31,7 +31,7 @@ Existing approaches usually fail:
 ### On Windows (PowerShell)
 ```powershell
 # 1. Clone repository
-git clone https://github.com/<your-username>/gdoc-ai-bridge.git
+git clone https://github.com/alisitskyi/gdoc-ai-bridge.git
 cd gdoc-ai-bridge
 
 # 2. Run automated installer
@@ -47,7 +47,7 @@ gdoc auth
 ### On macOS / Linux
 ```bash
 # 1. Clone repository
-git clone https://github.com/<your-username>/gdoc-ai-bridge.git
+git clone https://github.com/alisitskyi/gdoc-ai-bridge.git
 cd gdoc-ai-bridge
 
 # 2. Run automated installer

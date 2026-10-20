@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gdoc-ai-bridge"
+version = "1.0.0"
+description = "Universal Google Docs & Sheets CLI bridge for AI coding assistants (Claude Code, Cline, Cursor, Copilot)"
+readme = "README.md"
+authors = [{ name = "Anton Lisitskyi" }]
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+    "google-api-python-client>=2.100.0",
+    "google-auth-oauthlib>=1.0.0",
+    "google-auth-httplib2>=0.2.0"
+]
+
+[project.scripts]
+gdoc = "gdoc_ai.cli:main"
+gsheet = "gdoc_ai.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

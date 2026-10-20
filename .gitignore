@@ -1,0 +1,30 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Credentials & secrets (NEVER commit these!)
+.secrets/
+secrets/
+credentials.json
+token.json
+client_secret*.json
+*.pem
+*.key
+.env
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Editor & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

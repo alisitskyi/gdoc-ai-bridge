@@ -1,0 +1,17 @@
+# Cursor Rules for Google Docs & Sheets Integration
+
+When asked to inspect, read, or edit Google Docs or Google Sheets:
+- Use the terminal tool with the global `gdoc` / `gsheet` CLI.
+- Do not request credentials; global auth is managed at `~/.gdoc/`.
+- Every modifying action automatically creates a backup copy in Google Drive first.
+
+Key Commands:
+- Read Doc: `gdoc read "<URL>"`
+- Replace Text: `gdoc replace "<URL>" --find "<OLD>" --replace "<NEW>"`
+- Append Text: `gdoc append "<URL>" --text "<TEXT>"`
+- Read Comments: `gdoc comments "<URL>"`
+- Reply to Comment: `gdoc reply "<URL>" --comment-id "<ID>" --text "<REPLY>"`
+- Inspect Sheet: `gdoc sheet-info "<URL>"`
+- Read Sheet: `gdoc sheet-read "<URL>" [--range "Sheet1!A1:D20"] [--json]`
+- Update Cell: `gdoc sheet-update "<URL>" --range "Sheet1!B2" --values "Val"`
+- Append Row: `gdoc sheet-append "<URL>" --values "Val1, Val2, Val3"`

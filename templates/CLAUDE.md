@@ -49,3 +49,15 @@ You have access to a global command-line utility `gdoc` (and `gsheet`) to read a
   ```bash
   gdoc sheet-append "<SHEET_URL_OR_ID>" --values "Value1, Value2, Value3"
   ```
+- **Create new spreadsheet:**
+  ```bash
+  gsheet sheet-create --title "Marketing Dashboard"
+  ```
+- **Add a new tab:**
+  ```bash
+  gsheet sheet-add-tab "<SHEET_URL_OR_ID>" --title "Report_W43"
+  ```
+- **Add native charts (COLUMN, LINE, BAR, AREA, PIE):**
+  ```bash
+  gsheet sheet-chart "<SHEET_URL_OR_ID>" --range "Sheet1!A1:C10" --type COLUMN --title "Weekly Trends" --x-title "Week" --y-title "Total"
+  ```

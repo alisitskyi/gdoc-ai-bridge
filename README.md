@@ -149,6 +149,16 @@ gsheet sheet-update "<URL>" --range "Sheet1!A2:B2" --values '[["Value A", "Value
 
 # Append a row to the table:
 gsheet sheet-append "<URL>" --values "Product A, 199.99, Active"
+
+# Create a brand new Google Spreadsheet:
+gsheet sheet-create --title "Q4 Marketing Performance Dashboard"
+
+# Add a new tab to an existing spreadsheet:
+gsheet sheet-add-tab "<URL>" --title "Weekly_Report_W43"
+
+# Add a native chart (COLUMN, LINE, BAR, AREA, PIE, etc.):
+gsheet sheet-chart "<URL>" --range "Sheet1!A1:C10" --type COLUMN --title "Sessions vs Conversions" --x-title "Week" --y-title "Count"
+gsheet sheet-chart "<URL>" --range "'W43'!A1:B5" --type PIE --title "Traffic by Channel" --anchor "W43!D2"
 ```
 
 ---

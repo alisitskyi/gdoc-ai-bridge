@@ -15,3 +15,6 @@ Key Commands:
 - Read Sheet: `gdoc sheet-read "<URL>" [--range "Sheet1!A1:D20"] [--json]`
 - Update Cell: `gdoc sheet-update "<URL>" --range "Sheet1!B2" --values "Val"`
 - Append Row: `gdoc sheet-append "<URL>" --values "Val1, Val2, Val3"`
+- Create Sheet: `gsheet sheet-create --title "Report Title"`
+- Add Tab: `gsheet sheet-add-tab "<URL>" --title "TabName"`
+- Add Chart: `gsheet sheet-chart "<URL>" --range "Sheet1!A1:C10" --type COLUMN --title "Title"`

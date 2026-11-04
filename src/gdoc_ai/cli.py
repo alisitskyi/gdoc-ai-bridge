@@ -79,7 +79,7 @@ def extract_id(id_or_url: str) -> str:
     return id_or_url.strip()
 
 
-def get_credentials(profile: str = "default") -> Any:
+def get_credentials(profile: str = "default", allow_browser: bool = False) -> Any:
     """Authenticate via OAuth Desktop App or Service Account."""
     GLOBAL_DIR.mkdir(parents=True, exist_ok=True)
     creds_file = find_credentials_file()
@@ -117,10 +117,16 @@ def get_credentials(profile: str = "default") -> Any:
             print(f"[*] Refreshing expired token (profile: {profile})...", file=sys.stderr)
             try:
                 creds.refresh(Request())
-            except Exception:
+            except Exception as e:
+                print(f"[!] Silent token refresh failed: {e}", file=sys.stderr)
                 creds = None
 
         if not creds:
+            if not allow_browser:
+                print(f"\n[ERROR] Google OAuth token for profile '{profile}' has expired or is missing!", file=sys.stderr)
+                print(f"To re-authorize, run this command in your PowerShell terminal:\n  gdoc auth --profile {profile}\n", file=sys.stderr)
+                sys.exit(1)
+
             print(f"[*] Launching browser for Google login (profile: {profile})...", file=sys.stderr)
             flow = InstalledAppFlow.from_client_secrets_file(str(creds_file), SCOPES)
             creds = flow.run_local_server(port=0)
@@ -132,9 +138,9 @@ def get_credentials(profile: str = "default") -> Any:
     return creds
 
 
-def get_services(profile: str = "default"):
+def get_services(profile: str = "default", allow_browser: bool = False):
     """Return Docs, Drive, and Sheets API service clients."""
-    creds = get_credentials(profile)
+    creds = get_credentials(profile, allow_browser=allow_browser)
     docs = build('docs', 'v1', credentials=creds)
     drive = build('drive', 'v3', credentials=creds)
     sheets = build('sheets', 'v4', credentials=creds)
@@ -814,7 +820,7 @@ def main():
     try:
         prof = getattr(args, 'profile', 'default')
         if args.subcommand == "auth":
-            get_credentials(prof)
+            get_credentials(prof, allow_browser=True)
             print(f"[+] Authentication successful for profile '{prof}'!")
         elif args.subcommand == "status":
             cmd_status(args)
